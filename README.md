@@ -20,7 +20,7 @@ python main.py --dim low --inf predci --simu independent --ml ridge
 
 **Run the following files in order**
 
-case_study.py
+case_study_loco_vim.py
 
 case_study_cpi.R
 
