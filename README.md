@@ -2,7 +2,7 @@
 
 ## Simulation
 
-Parameters
+**Parameters**
 
 dimension: choices=["low", "high"]
 
@@ -12,13 +12,13 @@ data generating model: choices=["independent", "correlated", "nonlinear"]
 
 ml model: choices=["ridge", "randomforest", "kernelridge"]
 
-Example
+**Example**
 
 python main.py --dim low --inf predci --simu independent --ml ridge
 
 ## Case Study
 
-Run the following files in order
+**Run the following files in order**
 
 case_study.py
 
