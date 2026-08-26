@@ -378,7 +378,7 @@ def loco_ci(data_name, ml_name, output_path, figure_path, rep = 0):
 
 
 def loco_pred_error_res(data_name, ml_name, output_path, figure_path, rep = 0):
-    loco_meths = ["AdaMP","MP","50% Data","75% Data"]
+    loco_meths = ["AdaMP","MP","Split0.5","Split0.75"]
     pred_err = [0]*4
 
     adamp_err = pd.read_pickle(f'{output_path}/{data_name}_prederr_LOCO-AdaMP_{ml_name}_{rep}.pkl')
@@ -404,7 +404,7 @@ def loco_pred_error_res(data_name, ml_name, output_path, figure_path, rep = 0):
 
 
 def loco_pred_error(data_name, ml_name, output_path, figure_path, reps = [0]):
-    loco_meths = ["AdaMP","MP","50% Data","75% Data"]
+    loco_meths = ["AdaMP","MP","Split0.5","Split0.75"]
     pred_err = [0]*4
 
     for rep in reps:
@@ -421,7 +421,7 @@ def loco_pred_error(data_name, ml_name, output_path, figure_path, reps = [0]):
     plt.figure(figsize=(4, 3))
     plt.bar(loco_meths, pred_err,  color=color_list)
     plt.title(f"{ml_name}")
-    plt.xlabel("Method")
+    plt.xlabel("LOCO Method")
     #plt.xticks(rotation=15)
     plt.ylabel("Test Error")
     plt.grid(True, zorder=0, alpha=0.5, linestyle='--')
