@@ -113,6 +113,8 @@ def fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc, figure_pa
         ax.set_xticks(coverage['N'])
         ax.set_ylim([-0.03, 1.03])
         ax.set_ylabel('Coverage')
+        if ml_name == "RandomForest":
+            ml_name = "DecisionTree/RF"
         ax.set_title(f'{simu_type} | {ml_name}')
         ax.legend(bbox_to_anchor=(1.42, 0.5),loc='lower center')  
         plt.tight_layout()
@@ -132,6 +134,8 @@ def fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc, figure_pa
         ax.set_xlabel('N')
         ax.set_xticks(coverage['N'])
         ax.set_ylabel(f'{ylabel_name}')
+        if ml_name == "RandomForest":
+            ml_name = "DecisionTree/RF"
         ax.set_title(f'{simu_type} | {ml_name}')
         ax.legend(bbox_to_anchor=(1.42, 0.5),loc='lower center')  
         plt.tight_layout()

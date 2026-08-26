@@ -227,6 +227,8 @@ def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, 
     ax.set_xticks(ci['feature'])
     ax.set_xlabel('Feature')
     ax.set_ylabel('90% Confidence Interval')
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_title(f'{simu_type} | {ml_name}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')
@@ -250,12 +252,14 @@ def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, 
     br4 = [x + barWidth for x in br3]
     br5 = [x + barWidth for x in br4]
 
-    ax.bar(br1, FullData_pred, width = barWidth, color= color_list[4], zorder=10, label ='Baseline') 
+    ax.bar(br1, FullData_pred, width = barWidth, color= color_list[4], zorder=10, label ='Full Data') 
     ax.bar(br2, LOCOAdaMP_pred, width = barWidth, color= color_list[0], zorder=10, label ='LOCO-AdaMP')
     ax.bar(br3, LOCOMP_pred, width = barWidth, color= color_list[1], zorder=10, label ='LOCO-MP')
     ax.bar(br4, LOCOSplit1_pred, width = barWidth, color= color_list[2], zorder=10, label ='LOCO-Split0.5')
     ax.bar(br5, LOCOSplit2_pred, width = barWidth, color= color_list[3], zorder=10, label ='LOCO-Split0.75')
     ax.set_xticks([])
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_xlabel(ml_name)
     ax.set_ylabel('Test Error')
     ax.set_title(f'{simu_type} Model')
@@ -263,7 +267,7 @@ def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, 
     ax.set_xticklabels([])
     ax.legend(bbox_to_anchor=(1.4, 0.2),loc='lower center')
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/PredError_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'{figure_path}/TestError_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -277,10 +281,12 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Test Error')
     ax.set_ylim([-0.05, 1.05])
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_title(f'{simu_type} | {ml_name}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaMP_PredError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'{figure_path}/AdaMP_TestError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -292,6 +298,8 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Traning Error')
     ax.set_ylim([-0.05, 1.05])
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_title(f'{simu_type} | {ml_name}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.tight_layout()
@@ -308,6 +316,8 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xticks(sampling_prob['feature'])
     ax.set_xlabel('Feature')
     ax.set_ylabel('Sampling Probability')
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_title(f'{simu_type} | {ml_name}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
@@ -322,7 +332,10 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     m,n = get_mn(M,N)
     ax.axvline(x=m/M, color='red', linestyle='--', linewidth=1, label = "m/M")
     ax.set_xlabel('Probability')
+    ax.set_xlim([-0.01, 0.31])
     ax.set_ylabel('Frequency')
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_title(f'{simu_type} | {ml_name}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.2, 0.5),loc='lower center') 
@@ -340,6 +353,8 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Target')
     #ax.set_yscale('log')
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_title(f'{simu_type} | {ml_name}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
@@ -355,7 +370,10 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xticks(target['iteration'])
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Target')
-    ax.set_yscale('log')
+    ax.set_yscale('symlog', linthresh=0.001)
+    ax.set_ylim([-0.005, 0.5])
+    if ml_name == "RandomForest":
+        ml_name = "DecisionTree/RF"
     ax.set_title(f'{simu_type} | {ml_name}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
@@ -374,6 +392,8 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
         ax[b].set_xticks(ci['feature'])
         ax[b].set_xlabel('Feature')
         ax[b].set_ylabel('90% Confidence Interval')
+        if ml_name == "RandomForest":
+            ml_name = "DecisionTree/RF"
         ax[b].set_title(f'{simu_type} | {ml_name} | Iter {b+1}')
         ax[b].grid(True, zorder=0, alpha=0.5, linestyle='--')           
     fig.delaxes(ax[5])

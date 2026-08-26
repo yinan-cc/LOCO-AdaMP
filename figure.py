@@ -70,6 +70,8 @@ def fig_pred_ci_LOCO_all(M, simu_types, ml_names, loco_meths, dfs_pred_error, df
             ax.set_xticks(ci['feature'])
             ax.set_xlabel('Feature')
             ax.set_ylabel('90% Confidence Interval')
+            if ml_name == "RandomForest":
+                ml_name = "DecisionTree/RF"
             ax.set_title(f'{simu_type} | {ml_name}')
             ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     handles, labels = axes[1,2].get_legend_handles_labels()
@@ -103,17 +105,18 @@ def fig_pred_ci_LOCO_all(M, simu_types, ml_names, loco_meths, dfs_pred_error, df
         br4 = [x + barWidth for x in br3]
         br5 = [x + barWidth for x in br4]
 
-        ax[i].bar(br1, FullData_pred, width = barWidth, color= color_list[4], zorder=10, label ='Baseline (Full Data)') 
+        ax[i].bar(br1, FullData_pred, width = barWidth, color= color_list[4], zorder=10, label ='Full Data') 
         ax[i].bar(br2, LOCOAdaMP_pred, width = barWidth, color= color_list[0], zorder=10, label ='LOCO-AdaMP')
         ax[i].bar(br3, LOCOMP_pred, width = barWidth, color= color_list[1], zorder=10, label ='LOCO-MP')
         ax[i].bar(br4, LOCOSplit1_pred, width = barWidth, color= color_list[2], zorder=10, label ='LOCO-Split0.5')
         ax[i].bar(br5, LOCOSplit2_pred, width = barWidth, color= color_list[3], zorder=10, label ='LOCO-Split0.75')
-        ax[i].set_xticks([r + 2*barWidth for r in range(len(ml_names))], ml_names)
-        ax[i].set_xlabel('ML Model')
+        ml_names0 = ["Ridge", "DecisionTree/RF", "KernelRidge"]
+        ax[i].set_xticks([r + 2*barWidth for r in range(len(ml_names0))], ml_names0)
+        ax[i].set_xlabel('Base Learner')
         ax[i].set_ylabel('Test Error')
         ax[i].set_title(f'{simu_type} Model')
         ax[i].grid(True, zorder=0, alpha=0.5, linestyle='--')
-        ax[i].set_xticklabels(ml_names)
+        ax[i].set_xticklabels(ml_names0)
     handles, labels = ax[2].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center',   bbox_to_anchor=(0.5, 0.04), ncol=len(labels), frameon=False)
     plt.tight_layout()
@@ -130,6 +133,8 @@ def fig_pred_ci_LOCOAdaMP_all(M, N, simu_types, ml_names, indep_delta, target_in
     for i,simu_type in enumerate(simu_types):
         for j,ml_name in enumerate(ml_names):
             error = dfs_adap_error[f'{simu_type}'][f'{ml_name}']
+            if ml_name == "RandomForest":
+                ml_name = "DecisionTree/RF"
             ax[i].plot(error['iteration'],error['pred_err'],linestyle='-', marker='o', label = f'{ml_name}')
         ax[i].set_xticks(error['iteration'])
         ax[i].set_xlabel('Iteration')
@@ -150,7 +155,9 @@ def fig_pred_ci_LOCOAdaMP_all(M, N, simu_types, ml_names, indep_delta, target_in
     ax = ax.flatten()
     for i,simu_type in enumerate(simu_types):
         for j,ml_name in enumerate(ml_names):
-            error = dfs_adap_error[f'{simu_type}'][f'{ml_name}']     
+            error = dfs_adap_error[f'{simu_type}'][f'{ml_name}']
+            if ml_name == "RandomForest":
+                ml_name = "DecisionTree/RF"   
             ax[i].plot(error['iteration'],error['train_err'],linestyle='-', marker='o', label = f'{ml_name}')
         ax[i].set_xticks(error['iteration'])
         ax[i].set_xlabel('Iteration')
@@ -178,6 +185,8 @@ def fig_pred_ci_LOCOAdaMP_all(M, N, simu_types, ml_names, indep_delta, target_in
             ax.set_xticks(sampling_prob['feature'])
             ax.set_xlabel('Feature')
             ax.set_ylabel('Sampling Probability')
+            if ml_name == "RandomForest":
+                ml_name = "DecisionTree/RF"
             ax.set_title(f'{simu_type} | {ml_name}')
             ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     handles, labels = axes[1,2].get_legend_handles_labels()
@@ -198,7 +207,10 @@ def fig_pred_ci_LOCOAdaMP_all(M, N, simu_types, ml_names, indep_delta, target_in
             m,n = get_mn(M,N)
             ax.axvline(x=m/M, color='red', linestyle='--', linewidth=1, label = "m/M")
             ax.set_xlabel('Probability')
+            ax.set_xlim([-0.01, 0.31])
             ax.set_ylabel('Frequency')
+            if ml_name == "RandomForest":
+                ml_name = "DecisionTree/RF"
             ax.set_title(f'{simu_type} | {ml_name}')
             ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     handles, labels = axes[1,2].get_legend_handles_labels()
@@ -222,6 +234,8 @@ def fig_pred_ci_LOCOAdaMP_all(M, N, simu_types, ml_names, indep_delta, target_in
             ax.set_xlabel('Iteration')
             ax.set_ylabel('Target')
             #ax.set_yscale('log')
+            if ml_name == "RandomForest":
+                ml_name = "DecisionTree/RF"
             ax.set_title(f'{simu_type} | {ml_name}')
             ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     handles, labels = axes[1,2].get_legend_handles_labels()
@@ -242,7 +256,10 @@ def fig_pred_ci_LOCOAdaMP_all(M, N, simu_types, ml_names, indep_delta, target_in
             ax.set_xticks(target['iteration'])
             ax.set_xlabel('Iteration')
             ax.set_ylabel('Target')
-            ax.set_yscale('log')
+            ax.set_yscale('symlog', linthresh=0.001)
+            ax.set_ylim([-0.005, 0.5])
+            if ml_name == "RandomForest":
+                ml_name = "DecisionTree/RF"
             ax.set_title(f'{simu_type} | {ml_name}')
             ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     handles, labels = axes[1,2].get_legend_handles_labels()
@@ -270,6 +287,8 @@ def fig_cover_LOCOAdaMP_all(M, simu_types, ml_names, dfs_coverage, lossfunc, fig
                 ax.set_xticks(coverage['N'])
                 ax.set_ylim([-0.03, 1.03])
                 ax.set_ylabel('Coverage')
+                if ml_name == "RandomForest":
+                    ml_name = "DecisionTree"
                 ax.set_title(f'{simu_type} | {ml_name}')
         handles, labels = axes[1,2].get_legend_handles_labels()
         fig.legend(handles, labels, loc='lower center',   bbox_to_anchor=(0.5, 0.02), ncol=len(labels), frameon=False)
@@ -294,6 +313,8 @@ def fig_cover_LOCOAdaMP_all(M, simu_types, ml_names, dfs_coverage, lossfunc, fig
                 ax.set_xlabel('N')
                 ax.set_xticks(coverage['N'])
                 ax.set_ylabel(f'{ylabel_name}')
+                if ml_name == "RandomForest":
+                    ml_name = "DecisionTree"
                 ax.set_title(f'{simu_type} | {ml_name}')
         handles, labels = axes[1,2].get_legend_handles_labels()
         fig.legend(handles, labels, loc='lower center',   bbox_to_anchor=(0.5, 0.02), ncol=len(labels), frameon=False)
@@ -325,6 +346,8 @@ def fig_power_LOCO(M, simu_types, ml_names, loco_meths, dfs_power, dfs_target, l
                 ax.hist(dfs_target[f'{loco_meth}'][f'{simu_type}'][f'{ml_name}'], bins=15, label=["Target", "Z"])
                 ax.set_xlabel('Target/Z')
                 ax.set_ylabel('Frequency')
+                if ml_name == "RandomForest":
+                    ml_name = "DecisionTree/RF"
                 ax.set_title(f'{simu_type} | {ml_name}')
                 ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
         handles, labels = axes[1,2].get_legend_handles_labels()
@@ -361,6 +384,8 @@ def fig_power_LOCO(M, simu_types, ml_names, loco_meths, dfs_power, dfs_target, l
                 ax.set_xticks(power['beta'])
                 ax.set_ylim([-0.03, 1.03])
                 ax.set_ylabel('Power')
+                if ml_name == "RandomForest":
+                    ml_name = "DecisionTree/RF"
                 ax.set_title(f'{simu_type} | {ml_name}')
                 ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
         handles, labels = axes[1,2].get_legend_handles_labels()

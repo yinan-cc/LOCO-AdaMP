@@ -117,6 +117,8 @@ def fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, los
         ax.hist(dfs_target[f'{loco_meth}'], bins=15, label=["Target", "Z"])
         ax.set_xlabel('Target/Z')
         ax.set_ylabel('Frequency')
+        if ml_name == "RandomForest":
+            ml_name = "DecisionTree/RF"
         ax.set_title(f'{simu_type} | {ml_name}')
         ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
         ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')
@@ -147,6 +149,8 @@ def fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, los
         ax.set_xticks(power['beta'])
         ax.set_ylim([-0.03, 1.03])
         ax.set_ylabel('Power')
+        if ml_name == "RandomForest":
+            ml_name = "DecisionTree/RF"
         ax.set_title(f'{simu_type} | {ml_name}')
         ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
         ax.legend(bbox_to_anchor=(1.35, 0.3),loc='lower center')
