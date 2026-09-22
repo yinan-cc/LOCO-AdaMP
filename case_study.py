@@ -63,8 +63,8 @@ def data_process(data_name, response, file, data_path, output_path, rep = 0, sta
     f.close()
 
 
-### VIM
-def cs_vim(data_name, ml_name, alpha, output_path, rep = 0, measure_type='r_squared', selected_features=[], seed0 = None):
+### VIMP
+def cs_vimp(data_name, ml_name, alpha, output_path, rep = 0, measure_type='r_squared', selected_features=[], seed0 = None):
     data = pd.read_pickle(f'{output_path}/{data_name}_{rep}.pkl')
     X = data['X']
     Y = data['Y']
@@ -99,11 +99,11 @@ def cs_vim(data_name, ml_name, alpha, output_path, rep = 0, measure_type='r_squa
 
         res.append([vimp_precompute.vimp_]+[vimp_precompute.p_value_]+list(vimp_precompute.ci_[0]))
 
-    df_vim = pd.DataFrame(res, columns=['vim', 'pval', 'lb', 'up'])
-    df_vim['feature'] = col
-    df_vim = df_vim.sort_values(by='pval', ascending=True)
-    file_path = f'{output_path}/{data_name}_VIM_{ml_name}_{rep}.csv'
-    df_vim.to_csv(file_path, index=False)
+    df_vimp = pd.DataFrame(res, columns=['vimp', 'pval', 'lb', 'up'])
+    df_vimp['feature'] = col
+    df_vimp = df_vimp.sort_values(by='pval', ascending=True)
+    file_path = f'{output_path}/{data_name}_VIMP_{ml_name}_{rep}.csv'
+    df_vimp.to_csv(file_path, index=False)
 
 ### CPI
 def cs_cpi(data_name, ml_name, response, alpha, output_path, rep = 0, seed0=None):
@@ -131,8 +131,9 @@ def cs_cpi(data_name, ml_name, response, alpha, output_path, rep = 0, seed0=None
             mtry = floor(p / 3),
             min.node.size = 5,
             replace = FALSE,
+            sample.fraction = 1,
             seed = 242+seed_ind
-        )
+        ) 
     }}
     if ("{ml_name}" == "Ridge") {{
         X = as.matrix(train[, setdiff(colnames(train), tar)])
@@ -173,13 +174,292 @@ def cs_cpi(data_name, ml_name, response, alpha, output_path, rep = 0, seed0=None
     cpi_lm_log$ub = cpi_lm_log$CPI + qnorm(1 - alpha/2) * cpi_lm_log$SE
 
     cpi_new = cpi_lm_log[, c("Variable", "CPI", "estimate", "p.value", "lb", "ub")]
-    names(cpi_new) <- c("feature", "cpi", "estimate", "pval", "lb", "ub")
+    names(cpi_new) = c("feature", "cpi", "estimate", "pval", "lb", "ub")
     cpi = cpi_new[order(cpi_new$pval), ]
     
     write.csv(cpi, "{output_path}/{data_name}_CPI_{ml_name}_{rep}.csv")
     print("CPI Done")
     """
 
+    robjects.r(r_code)
+
+### Floodgate
+def cs_floodgate(data_name, ml_name, response, alpha, output_path, rep = 0, seed0=None):
+
+    r_code = f"""
+    library(floodgate)
+    library(randomForest)
+    library(glasso)
+    train = read.csv("{output_path}/{data_name}_train_{rep}.csv")
+    tar = "{response}"
+    alpha = {alpha}
+    seed_ind = {rep}*537+{seed0}
+
+    K = 100
+    X = as.matrix(train[, setdiff(names(train), tar), drop = FALSE])
+    Y = as.numeric(train[[tar]])
+    storage.mode(X) = "double"
+    n = nrow(X)
+    p = ncol(X)
+
+    set.seed(seed_ind+374)
+
+    i1 = sample(seq_len(n), size = floor(n / 2), replace = FALSE)
+    i2 = setdiff(seq_len(n), i1)
+
+    train.fun = function(x, y, out = NULL) {{
+        set.seed(seed_ind+2738)
+        randomForest(
+        x = as.matrix(x),
+        y = as.numeric(y),
+        ntree = 200,
+        mtry = floor(ncol(x) / 3),
+        nodesize = 5,
+        replace = FALSE,
+        sampsize = nrow(x)
+    )
+    }}
+
+    predict.fun = function(out, newx) {{
+    as.numeric(predict(out,newdata = as.matrix(newx)))
+    }}
+
+    active.fun = function(out) {{
+    list(seq_len(p))
+    }}
+
+    funs = list(
+    train.fun = train.fun,
+    active.fun = active.fun,
+    predict.fun = predict.fun
+    )
+
+    X_model = X[i1, , drop = FALSE]
+    n_model = nrow(X_model)
+
+    S_full = crossprod(X_model) / n_model
+    S_off_diagonal = S_full
+    diag(S_off_diagonal) = 0
+
+    rho_max = max(abs(S_off_diagonal))
+    rho_grid = exp(seq(from = log(rho_max * 0.01),to = log(rho_max),length.out = 30))
+
+    nfolds = 3
+
+    set.seed(seed_ind + 732)
+
+    fold_id = sample(rep(seq_len(nfolds),length.out = n_model))
+    cv_loss = rep(NA_real_, length(rho_grid))
+
+    for (r in seq_along(rho_grid)) {{
+        rho = rho_grid[r]
+        fold_loss = rep(NA_real_, nfolds)
+
+        for (fold in seq_len(nfolds)) {{
+            training_rows = fold_id != fold
+            validation_rows = fold_id == fold
+            X_fold_train = X_model[training_rows, , drop = FALSE]
+            X_fold_validation = X_model[validation_rows, , drop = FALSE]
+            S_train = crossprod(X_fold_train) / nrow(X_fold_train)
+            S_validation = crossprod(X_fold_validation) / nrow(X_fold_validation)
+
+            glasso_fold = try(
+            glasso(
+                s = S_train,
+                rho = rho,
+                penalize.diagonal = FALSE
+            ),
+            silent = TRUE
+            )
+
+            if (inherits(glasso_fold, "try-error")) {{
+            fold_loss[fold] = Inf
+            next
+            }}
+
+            Omega_fold = glasso_fold$wi
+            log_determinant = determinant(Omega_fold,logarithm = TRUE)
+
+            if (log_determinant$sign <= 0) {{
+            fold_loss[fold] = Inf
+            next
+            }}
+
+            logdet_value = as.numeric(log_determinant$modulus)
+            fold_loss[fold] = -logdet_value +sum(S_validation * t(Omega_fold))
+        }}
+
+    cv_loss[r] = mean(fold_loss)
+
+    }}
+
+    best_index = which.min(cv_loss)
+    best_rho = rho_grid[best_index]
+
+    glasso_final = glasso(
+    s = S_full,
+    rho = best_rho,
+    penalize.diagonal = FALSE
+    )
+
+    Sigma_hat = glasso_final$w
+    Omega_hat = glasso_final$wi
+    gamma_X.list = vector("list", p)
+    sigma_X.list = vector("list", p)
+
+    for (j in seq_len(p)) {{
+    gamma_X.list[[j]] =as.numeric(-Omega_hat[-j, j] /Omega_hat[j, j])
+    sigma_X.list[[j]] =as.numeric(1 / Omega_hat[j, j])
+    }}
+
+    valid_gamma = vapply(
+    gamma_X.list,
+    function(gamma_j) {{
+        length(gamma_j) == p - 1 &&
+        all(is.finite(gamma_j))
+    }},
+    logical(1)
+    )
+
+    conditional_variances = unlist(sigma_X.list)
+
+    set.seed(seed_ind + 29)
+
+    nulls.list = floodgate::sample.gaussian.nulls(
+    X = X,
+    S = as.list(seq_len(p)),
+    K = K,
+    gamma_X.list_S = gamma_X.list,
+    sigma_X.list_S = sigma_X.list,
+    verbose = TRUE
+    )
+
+    stopifnot(length(nulls.list) == p)
+
+    valid_nulls = vapply(
+    nulls.list,
+    function(null_j) {{
+        nrow(null_j) == n * K &&
+        all(is.finite(null_j))
+    }},
+    logical(1)
+    )
+
+    fg_result = floodgate::floodgate(
+    X = X,
+    Y = matrix(Y, ncol = 1),
+    i1 = i1,
+    i2 = i2,
+    nulls.list = nulls.list,
+    gamma_X.list = gamma_X.list,
+    sigma_X.list = sigma_X.list,
+    Xmodel = "gaussian",
+    funs = funs,
+    algo = "rf",
+    one.sided = TRUE,
+    alevel = alpha,
+    test = "z",
+    verbose = TRUE
+    )
+    feature_index = unlist(fg_result$S)
+    result = data.frame(
+    feature_index = feature_index,
+    feature = colnames(X)[feature_index],
+    p_value = as.numeric(fg_result$inf.out[, "P-value"]),
+    CI_lower = as.numeric(fg_result$inf.out[, "LowConfPt"]),
+    CI_upper = as.numeric(fg_result$inf.out[, "UpConfPt"]),
+    floodgate_LCB = as.numeric(fg_result$inf.out[, "LCB"])
+    )
+
+    names(result) = c("fea_idx", "feature", "pval", "lb", "up", "lcb")
+    fldg = result[order(result$pval), ]
+    write.csv(fldg,file = "{output_path}/{data_name}_Floodgate_{ml_name}_{rep}.csv")
+    print("Floodgate Done")
+    """
+    robjects.r(r_code)
+
+### GCM
+def cs_gcm(data_name, ml_name, response, alpha, output_path, rep = 0, seed0=None):
+
+    r_code = f"""
+    library(randomForest)
+    library(GeneralisedCovarianceMeasure)
+
+    train = read.csv("{output_path}/{data_name}_train_{rep}.csv")
+    tar = "{response}"
+    alpha = {alpha}
+    seed_ind = {rep}*834+{seed0}
+
+    feature_names = setdiff(colnames(train), tar)
+    X = as.matrix(train[, feature_names, drop = FALSE])
+    Y = as.numeric(train[[tar]])
+    n = nrow(X)
+    p = ncol(X)
+
+    gcm_results = data.frame(
+    feature_index = seq_len(p),
+    feature = feature_names,
+    test_statistic = NA_real_,
+    p_value = NA_real_
+    )
+
+    for (j in seq_len(p)) {{
+        Xj = X[, j]
+        Zj = X[, -j, drop = FALSE]
+        set.seed(374+seed_ind)
+        rf_Xj = randomForest(
+        x = Zj,
+        y = Xj,
+        ntree = 200,
+        mtry = max(1, floor(ncol(Zj) / 3)),
+        nodesize = 5,
+        replace = FALSE,
+        sampsize = nrow(Zj)
+        )
+
+        predicted_Xj = predict(
+        rf_Xj,
+        newdata = Zj
+        )
+
+        residual_Xj = Xj - predicted_Xj
+
+        set.seed(743+seed_ind)
+
+        rf_Y = randomForest(
+            x = Zj,
+            y = Y,
+            ntree = 200,
+            mtry = max(1, floor(ncol(Zj) / 3)),
+            nodesize = 5,
+            replace = FALSE,
+            sampsize = nrow(Zj)
+        )
+
+        predicted_Y = predict(
+        rf_Y,
+        newdata = Zj
+        )
+
+        residual_Y = Y - predicted_Y
+  
+        gcm_fit = gcm.test(
+        X = NULL,
+        Y = NULL,
+        Z = NULL,
+        alpha = alpha,
+        resid.XonZ = residual_Xj,
+        resid.YonZ = residual_Y
+        )
+
+        gcm_results$test_statistic[j] = gcm_fit$test.statistic
+        gcm_results$p_value[j] = gcm_fit$p.value
+    }}
+    names(gcm_results) = c("fea_idx", "feature", "stat", "pval")
+    gcm_r = gcm_results[order(gcm_results$pval), ]
+    write.csv(gcm_r, file = "{output_path}/{data_name}_GCM_{ml_name}_{rep}.csv")
+    print("GCM done")
+    """
     robjects.r(r_code)
 
 
@@ -229,7 +509,7 @@ def cs_locoadamp(data_name, ml_name, n, m, alpha, indep_delta, bonf, output_path
     X1 = data['X1']
     Y1 = data['Y1']
     M=len(X[0])
-    Kb = [1000, 1000, 1000, 1000, 10000]
+    Kb = [2000, 2000, 2000, 2000, 10000]
 
     ml_model = get_model(ml_name)
     np.random.seed(seed0+int(rep*53+n*12+m*123))
@@ -264,7 +544,7 @@ def cs_locomp(data_name, ml_name, n, m, alpha, bonf, output_path, rep = 0, seed0
     Y = data['Y']
     X1 = data['X1']
     Y1 = data['Y1']
-    Kb = [1000, 1000, 1000, 1000, 10000]
+    Kb = [2000, 2000, 2000, 2000, 10000]
     K_locomp = sum(Kb)
 
     ml_model = get_model(ml_name)
@@ -393,7 +673,7 @@ def loco_pred_error_res(data_name, ml_name, output_path, figure_path, rep = 0):
     color_list = ["#d62728", '#2ca02c','#ff7f0e','#1f77b4', '#9467bd', "#8c564b"]
     plt.figure(figsize=(4, 3))
     plt.bar(loco_meths, pred_err,  color=color_list)
-    plt.title(f"{ml_name}")
+    #plt.title(f"{ml_name}")
     plt.xlabel("Method")
     #plt.xticks(rotation=15)
     plt.ylabel("Test Error")
@@ -420,7 +700,7 @@ def loco_pred_error(data_name, ml_name, output_path, figure_path, reps = [0]):
     color_list = ["#d62728", '#2ca02c','#ff7f0e','#1f77b4', '#9467bd', "#8c564b"]
     plt.figure(figsize=(4, 3))
     plt.bar(loco_meths, pred_err,  color=color_list)
-    plt.title(f"{ml_name}")
+    #plt.title(f"{ml_name}")
     plt.xlabel("LOCO Method")
     #plt.xticks(rotation=15)
     plt.ylabel("Test Error")
@@ -442,7 +722,9 @@ def tmse_res(data_name, response, ml_name, output_path, figure_path, rep, seed0)
     split1_mse = [0]*50
     split2_mse = [0]*50
     cpi_mse = [0]*50
-    vim_mse = [0]*50
+    vimp_mse = [0]*50
+    floodgate_mse = [0]*50
+    gcm_mse = [0]*50
 
     locoadamp = pd.read_csv(f"{output_path}/{data_name}_LOCO-AdaMP_{ml_name}_{rep}.csv")
     locoadamp = locoadamp.sort_values(by='pval', ascending=True)
@@ -459,8 +741,14 @@ def tmse_res(data_name, response, ml_name, output_path, figure_path, rep, seed0)
     cpi = pd.read_csv(f"{output_path}/{data_name}_CPI_{ml_name}_{rep}.csv")
     cpi = cpi.sort_values(by='pval', ascending=True)
 
-    vim = pd.read_csv(f"{output_path}/{data_name}_VIM_{ml_name}_{rep}.csv")
-    vim = vim.sort_values(by='pval', ascending=True)
+    vimp = pd.read_csv(f"{output_path}/{data_name}_VIMP_{ml_name}_{rep}.csv")
+    vimp = vimp.sort_values(by='pval', ascending=True)
+
+    floodgate = pd.read_csv(f"{output_path}/{data_name}_Floodgate_{ml_name}_{rep}.csv")
+    floodgate = floodgate.sort_values(by='pval', ascending=True)
+
+    gcm = pd.read_csv(f"{output_path}/{data_name}_GCM_{ml_name}_{rep}.csv")
+    gcm = gcm.sort_values(by='pval', ascending=True)
 
     for i in range(50):
         seed = i*321+5432+seed0
@@ -499,14 +787,28 @@ def tmse_res(data_name, response, ml_name, output_path, figure_path, rep, seed0)
         y_pred = rf.predict(X_test[cpi_fea1])
         cpi_mse[i] = mean_squared_error(y_test, y_pred)
 
-        vim_fea = vim['feature'][0:i+1]
-        vim_fea1 = vim_fea.sort_values(key=lambda s: s.str.extract(r'X(\d+)')[0].astype(int))
+        vimp_fea = vimp['feature'][0:i+1]
+        vimp_fea1 = vimp_fea.sort_values(key=lambda s: s.str.extract(r'X(\d+)')[0].astype(int))
         rf = RandomForestRegressor(n_estimators=200, max_features= 1/3, min_samples_leaf=5, random_state=seed, bootstrap=False)
-        rf.fit(X_train[vim_fea1],y_train)
-        y_pred = rf.predict(X_test[vim_fea1])
-        vim_mse[i] = mean_squared_error(y_test, y_pred)
+        rf.fit(X_train[vimp_fea1],y_train)
+        y_pred = rf.predict(X_test[vimp_fea1])
+        vimp_mse[i] = mean_squared_error(y_test, y_pred)
 
-    color_list = ["#d62728", '#2ca02c','#ff7f0e','#1f77b4', "#8c564b", '#9467bd']
+        floodgate_fea = floodgate['feature'][0:i+1]
+        floodgate_fea1 = floodgate_fea.sort_values(key=lambda s: s.str.extract(r'X(\d+)')[0].astype(int))
+        rf = RandomForestRegressor(n_estimators=200, max_features= 1/3, min_samples_leaf=5, random_state=seed, bootstrap=False)
+        rf.fit(X_train[floodgate_fea1],y_train)
+        y_pred = rf.predict(X_test[floodgate_fea1])
+        floodgate_mse[i] = mean_squared_error(y_test, y_pred)
+
+        gcm_fea = gcm['feature'][0:i+1]
+        gcm_fea1 = gcm_fea.sort_values(key=lambda s: s.str.extract(r'X(\d+)')[0].astype(int))
+        rf = RandomForestRegressor(n_estimators=200, max_features= 1/3, min_samples_leaf=5, random_state=seed, bootstrap=False)
+        rf.fit(X_train[gcm_fea1],y_train)
+        y_pred = rf.predict(X_test[gcm_fea1])
+        gcm_mse[i] = mean_squared_error(y_test, y_pred)
+
+    color_list = ["#d62728", '#2ca02c','#ff7f0e','#1f77b4', "#8c564b", '#9467bd', "#f587b7", "#7f7f7f"]
 
     x = np.arange(1, 51)
     plt.figure(figsize=(4, 3))  
@@ -515,9 +817,11 @@ def tmse_res(data_name, response, ml_name, output_path, figure_path, rep, seed0)
     plt.plot(x, split1_mse, marker='o', markersize=4, label='LOCO-Split0.5', color = color_list[2], zorder=8)
     plt.plot(x, split2_mse, marker='o', markersize=4, label='LOCO-Split0.75', color = color_list[3], zorder=7) 
     plt.plot(x, cpi_mse, marker='o', markersize=4, label='CPI', color = color_list[4], zorder=6)
-    plt.plot(x, vim_mse, marker='o', markersize=4, label='VIM', color = color_list[5], zorder=5)
+    plt.plot(x, vimp_mse, marker='o', markersize=4, label='VIMP', color = color_list[5], zorder=5)
+    plt.plot(x, floodgate_mse, marker='o', markersize=4, label='Floodgate', color = color_list[6], zorder=4)
+    plt.plot(x, gcm_mse, marker='o', markersize=4, label='GCM', color = color_list[7], zorder=3)
 
-    plt.title(f"{ml_name}")
+    #plt.title(f"{ml_name}")
     plt.xlabel("Number of Features")
     plt.ylabel("Test Error")
     plt.grid(True, zorder=0, alpha=0.5, linestyle='--')
@@ -526,7 +830,7 @@ def tmse_res(data_name, response, ml_name, output_path, figure_path, rep, seed0)
     #plt.show()
     plt.close()
     
-    tmse = pd.DataFrame({'LOCO-AdaMP': adamp_mse, 'LOCO-MP': mp_mse, 'LOCO-Split0.5': split1_mse, 'LOCO-Split0.75': split2_mse, 'CPI': cpi_mse, 'VIM': vim_mse})
+    tmse = pd.DataFrame({'LOCO-AdaMP': adamp_mse, 'LOCO-MP': mp_mse, 'LOCO-Split0.5': split1_mse, 'LOCO-Split0.75': split2_mse, 'CPI': cpi_mse, 'VIMP': vimp_mse, 'Floodgate': floodgate_mse, 'GCM': gcm_mse})
     f = open(f'{output_path}/{data_name}_TMSE_{ml_name}_{rep}.pkl','wb')
     pickle.dump(tmse,f)
     f.close()
@@ -543,7 +847,7 @@ def tmse(data_name, ml_name, output_path, figure_path, reps = [0]):
     tmse_mean_20 = tmse_mean.iloc[:20]
     tmse_sem_20 = tmse_sem.iloc[:20]
 
-    color_list = ['#d62728', '#2ca02c','#ff7f0e','#1f77b4', "#8c564b", '#9467bd']
+    color_list = ['#d62728', '#2ca02c','#ff7f0e','#1f77b4', "#8c564b", '#9467bd', "#f587b7", "#7f7f7f"]
 
     x = np.arange(1, 51)
     plt.figure(figsize=(4, 3))  
@@ -552,8 +856,11 @@ def tmse(data_name, ml_name, output_path, figure_path, reps = [0]):
     plt.plot(x, tmse_mean['LOCO-Split0.5'], marker='o', markersize=4, label='LOCO-Split0.5', color = color_list[2], zorder=8)
     plt.plot(x, tmse_mean['LOCO-Split0.75'], marker='o', markersize=4, label='LOCO-Split0.75', color = color_list[3], zorder=7) 
     plt.plot(x, tmse_mean['CPI'], marker='o', markersize=4, label='CPI', color = color_list[4], zorder=6)
-    plt.plot(x, tmse_mean['VIM'], marker='o', markersize=4, label='VIM', color = color_list[5], zorder=5)
-    plt.title(f"{ml_name}")
+    plt.plot(x, tmse_mean['VIMP'], marker='o', markersize=4, label='VIMP', color = color_list[5], zorder=5)
+    plt.plot(x, tmse_mean['Floodgate'], marker='o', markersize=4, label='Floodgate', color = color_list[6], zorder=4)
+    plt.plot(x, tmse_mean['GCM'], marker='o', markersize=4, label='GCM', color = color_list[7], zorder=3)
+
+    #plt.title(f"{ml_name}")
     plt.xlabel("Number of Features")
     plt.ylabel("Test Error")
     plt.grid(True, zorder=0, alpha=0.5, linestyle='--')
@@ -569,8 +876,11 @@ def tmse(data_name, ml_name, output_path, figure_path, reps = [0]):
     plt.errorbar(x, tmse_mean_20['LOCO-Split0.5'], yerr=(norm.ppf(1-alpha/2))*tmse_sem_20['LOCO-Split0.5'], label='LOCO-Split0.5', marker='o', markersize=4, capsize=3, color = color_list[2], zorder=8)
     plt.errorbar(x, tmse_mean_20['LOCO-Split0.75'], yerr=(norm.ppf(1-alpha/2))*tmse_sem_20['LOCO-Split0.75'], label='LOCO-Split0.75', marker='o', markersize=4, capsize=3, color = color_list[3], zorder=7)
     plt.errorbar(x, tmse_mean_20['CPI'], yerr=(norm.ppf(1-alpha/2))*tmse_sem_20['CPI'], label='CPI', marker='o', markersize=4, capsize=3, color = color_list[4], zorder=6)
-    plt.errorbar(x, tmse_mean_20['VIM'], yerr=(norm.ppf(1-alpha/2))*tmse_sem_20['VIM'], label='VIM', marker='o', markersize=4, capsize=3, color = color_list[5], zorder=5)
-    plt.title(f"{ml_name}")
+    plt.errorbar(x, tmse_mean_20['VIMP'], yerr=(norm.ppf(1-alpha/2))*tmse_sem_20['VIMP'], label='VIMP', marker='o', markersize=4, capsize=3, color = color_list[5], zorder=5)
+    plt.errorbar(x, tmse_mean_20['Floodgate'], yerr=(norm.ppf(1-alpha/2))*tmse_sem_20['Floodgate'], label='Floodgate', marker='o', markersize=4, capsize=3, color = color_list[6], zorder=4)
+    plt.errorbar(x, tmse_mean_20['GCM'], yerr=(norm.ppf(1-alpha/2))*tmse_sem_20['GCM'], label='GCM', marker='o', markersize=4, capsize=3, color = color_list[7], zorder=3)
+  
+    #plt.title(f"{ml_name}")
     plt.xlabel("Number of Features")
     plt.ylabel("Test Error")
     plt.grid(True, zorder=0, alpha=0.5, linestyle='--')
@@ -581,7 +891,7 @@ def tmse(data_name, ml_name, output_path, figure_path, reps = [0]):
 
 def num_sig(data_name, ml_name, col, output_path, figure_path, reps = [0]):
     sig_counts_df = pd.DataFrame({'feature': col})
-    methods = ["LOCO-AdaMP", "LOCO-MP", "LOCO-Split0.5", "LOCO-Split0.75", "CPI", "VIM"]
+    methods = ["LOCO-AdaMP", "LOCO-MP", "LOCO-Split0.5", "LOCO-Split0.75", "CPI", "VIMP", "Floodgate", "GCM"]
     for method in methods:
         sig_counts = {feature: 0 for feature in col}   
         for rep in reps:
@@ -596,7 +906,7 @@ def num_sig(data_name, ml_name, col, output_path, figure_path, reps = [0]):
     csv_path = os.path.join(figure_path, f"{data_name}_sig_counts_all_methods.csv")
     sig_counts_df.to_csv(csv_path, index=False)
 
-    fig, axes = plt.subplots(2, 3, figsize=(11,6))
+    fig, axes = plt.subplots(3, 3, figsize=(11,9))
     axes = axes.flatten()
     max_count = 0
     for method in methods:
@@ -620,6 +930,7 @@ def num_sig(data_name, ml_name, col, output_path, figure_path, reps = [0]):
         axes[i].set_xticks(range(0,11))
         axes[i].set_ylim(0, max_count+5)
         axes[i].grid(True, zorder=0, alpha=0.5, linestyle='--')
+    fig.delaxes(axes[8])
     plt.tight_layout()
     plt.savefig(f'{figure_path}/{data_name}_Hist0_{ml_name}.png', dpi=300, bbox_inches="tight")
     #plt.show()
@@ -681,7 +992,7 @@ def get_results(data_name, response, ml_name, ms, ns, output_path, figure_path, 
     print(loo_err_mp)
     min_value = loo_err_mp.values.min()
     row_idx_mp, col_idx_mp = np.where(loo_err_mp.values == min_value)
-    print('LOCO-AdaMP:', 'm=', ms[col_idx_mp[0]], ',n=',ns[row_idx_mp[0]])
+    print('LOCO-MP:', 'm=', ms[col_idx_mp[0]], ',n=',ns[row_idx_mp[0]])
     n_mp = ns[row_idx_mp[0]]
     m_mp = ms[col_idx_mp[0]]
 
@@ -729,16 +1040,6 @@ if __name__ == "__main__":
     ml_name = "RandomForest"
     replicate = 10
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="data")
-    parser.add_argument("--ml", type=str, default="randomforest", choices=["ridge", "randomforest"])
-    parser.add_argument("--rep", type=int, default=0)
-
-    args = parser.parse_args()
-    data_name = args.data
-    ml_name = format_ml_name(args.ml)
-    replicate = args.rep
-
     seed0 = 101
 
     alpha = 0.1
@@ -760,16 +1061,18 @@ if __name__ == "__main__":
         if not os.path.exists(check_path):
             data_process(data_name, response, file, data_path, output_path, rep = rep, standardy = standy, seed0 = seed0)
         
-        cs_vim(data_name, ml_name, alpha, output_path, rep = rep, seed0 = seed0)
+        cs_vimp(data_name, ml_name, alpha, output_path, rep = rep, seed0 = seed0)
         cs_cpi(data_name, ml_name, response, alpha, output_path, rep = rep, seed0 = seed0)
+        cs_floodgate(data_name, ml_name, response, alpha, output_path, rep = rep, seed0 = seed0)
+        cs_gcm(data_name, ml_name, response, alpha, output_path, rep = rep, seed0 = seed0)
         cs_locosplit(data_name, ml_name, ratios, alpha, bonf, output_path, rep = rep, seed0 = seed0)
         data = pd.read_pickle(f'{output_path}/{data_name}_{rep}.pkl')
         X = data['X']
         N = X.shape[0]
         M = X.shape[1]
-        m0, n0 = get_mn(M,N)
+        n0 = int(N**0.8)
         ns = [n0]
-        ms = [int(0.05*M), int(0.1*M), int(0.2*M), int(0.4*M)]
+        ms = [int(np.log(M)), int(2*np.log(M)), int(4*np.log(M))] #, int(8*np.log(M))]
         for m in ms:
             for n in ns:
                 cs_locoadamp(data_name, ml_name, n, m, alpha, indep_delta, bonf, output_path, rep = rep, seed0 = seed0)
