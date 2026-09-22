@@ -1072,7 +1072,7 @@ if __name__ == "__main__":
         M = X.shape[1]
         n0 = int(N**0.8)
         ns = [n0]
-        ms = [int(np.log(M)), int(2*np.log(M)), int(4*np.log(M))] #, int(8*np.log(M))]
+        ms = [int(0.05*M), int(0.1*M), int(0.2*M), int(0.4*M)]
         for m in ms:
             for n in ns:
                 cs_locoadamp(data_name, ml_name, n, m, alpha, indep_delta, bonf, output_path, rep = rep, seed0 = seed0)
