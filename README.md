@@ -1,6 +1,9 @@
 # LOCO-AdaMP
 
-## Simulation
+This repository contains the code for the paper “LOCO-AdaMP: Built-in LOCO Inference for Adaptive
+Minipatch Ensembles with Enhanced Prediction” by Yinan Cheng and Lili Zheng
+
+## Simulation Study
 
 **Parameters**
 
@@ -17,3 +20,5 @@ loss function: choices=["sq", "abs"]
 **Example**
 
 python main.py --dim low --inf coverage --simu independent --ml ridge --loss sq
+
+## Case Study
