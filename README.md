@@ -7,31 +7,20 @@ Minipatch Ensembles with Enhanced Prediction](link) by Yinan Cheng and Lili Zhen
 
 ### Parameters
 
-**Dimension: choices=["low", "high"]**  
-"low": the low dimensional setting (M =50, N =200).  
-"high": the high dimensional setting (M =500, N =200).  
-
-**Inference: choices=["predci", "coverage", "power"]**  
-"predci": obtain figures for test errors, LOCO inference confidence intervals, LOCO-AdaMP targets and Assumption 5 checking.  
-"coverage": obtain figures for LOCO-AdaMP coverage rates.  
-"power": obtain figures for LOCO powers.  
-
-**Data generating model: choices=["independent", "correlated", "nonlinear"]**  
-"independent": linear independent model.  
-"correlated": linear correlated model.  
-"nonlinear": nonlinear independent model.  
-
-**Base learner: choices=["ridge", "randomforest", "kernelridge"]**  
-"randomforest": decision tree for LOCO-MP and LOCO-AdaMP; random forest for LOCO-Split.  
-
-**Loss function: choices=["sq", "abs"]**  
-"sq": squared loss.  
-"abs": absolute loss.  
+| Argument | Choices | Description |
+| --- | --- | --- |
+| `--dim` | `low`, `high` | Low dimensional: \(M=50, N=200\); high dimensional: \(M=500, N=200\). |
+| `--inf` | `predci`, `coverage`, `power` | `predci`: test errors, LOCO confidence intervals, LOCO-AdaMP targets, and Assumption 5 checks; `coverage`: LOCO-AdaMP coverage rates; `power`: power of LOCO tests. |
+| `--simu` | `independent`, `correlated`, `nonlinear` | Linear model with independent features, linear model with correlated features, or nonlinear model with independent features. |
+| `--ml` | `ridge`, `randomforest`, `kernelridge` | Base learner. For `randomforest`, LOCO-MP and LOCO-AdaMP use decision trees, while LOCO-Split uses random forests. |
+| `--loss` | `sq`, `abs` | Squared or absolute loss. |
 
 ### Example
 
+```bash
 python main.py --dim low --inf coverage --simu independent --ml ridge --loss sq
+```
 
 ## Case Study
 
-The ROSMAP data used in our case study are not included in this repository. Researchers can request access through the [RADC data request page](https://www.radc.rush.edu/docs/omics/overview.htm?utm_source=chatgpt.com), subject to its data access requirements and Data Use Agreement.
+The ROSMAP data used in the case study are not included in this repository. Researchers interested in obtaining the data can consult the [RADC Data Resource Request page](https://www.radc.rush.edu/requests/data.htm) for access requirements and the application process.
