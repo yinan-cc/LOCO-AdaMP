@@ -34,4 +34,4 @@ python main.py --dim low --inf coverage --simu independent --ml ridge --loss sq
 
 ## Case Study
 
-The ROSMAP data used in our case study are not included in this repository. Researchers can request access through the [RADC data request page](https://www.radc.rush.edu/requests/data.htm), subject to its data access requirements and Data Use Agreement.
+The ROSMAP data used in our case study are not included in this repository. Researchers can request access through the [RADC data request page](https://www.radc.rush.edu/docs/omics/overview.htm?utm_source=chatgpt.com), subject to its data access requirements and Data Use Agreement.
