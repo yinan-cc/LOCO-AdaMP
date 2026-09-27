@@ -19,19 +19,18 @@ def res_power(M, loco_meths, simu_type, ml_name, betas, rep, alpha, beta_ind, pv
     for loco_meth in loco_meths:
         res_power_LOCO(M, loco_meth, simu_type, ml_name, betas, rep, alpha, beta_ind, pvalue_thre, lossfunc, output_path = output_path)
 
-def fig_power(M, loco_meths, simu_type, ml_name, lossfunc, output_path = '.', figure_path = '.'):
+def fig_power(M, loco_meths, simu_type, ml_name, lossfunc, output_path = '.'):
     dfs_power = {loco_meth: pd.DataFrame() for loco_meth in loco_meths}
     dfs_target = {loco_meth: pd.DataFrame() for loco_meth in loco_meths}
     for loco_meth in loco_meths:
         dfs_power[f'{loco_meth}'] = pd.read_pickle(f'{output_path}/fig_Power_{loco_meth}_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl')
         dfs_target[f'{loco_meth}'] = pd.read_pickle(f'{output_path}/fig_PowerTarget_{loco_meth}_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl')
-    fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, lossfunc, figure_path = figure_path)
+    fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, lossfunc)
 
 
 ### Power for LOCO-AdaMP
 def power_LOCOAdaMP(M, N, simu_type, ml_name, betas, rep, beta_ind, alpha, indep_delta, n_jobs, lossfunc, simu_path = '.', output_path = '.',seed0=1):
-    m,n = get_mn(M, N)
-    Kb = get_Kb(M, N, m, n)
+    m,n,Kb,K_locomp = get_parameter(M,N)
     ml_model = get_model(ml_name)
     
     def get_power_LOCOAdaMP(beta, rep_ind):          
@@ -48,8 +47,7 @@ def power_LOCOAdaMP(M, N, simu_type, ml_name, betas, rep, beta_ind, alpha, indep
 
 ### Power for LOCO-MP
 def power_LOCOMP(M, N, simu_type, ml_name, betas, rep, beta_ind, alpha, n_jobs, lossfunc, simu_path = '.', output_path = '.',seed0=1):
-    m, n = get_mn(M, N)
-    Kb = get_Kb(M, N, m, n)
+    m,n,Kb,K_locomp = get_parameter(M,N)
     K_locomp = sum(Kb)
     ml_model = get_model(ml_name)
 
@@ -110,26 +108,7 @@ def res_power_LOCO(M, loco_meth, simu_type, ml_name, betas, rep, alpha, beta_ind
 
 
 ### Figures
-def fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, lossfunc, figure_path = '.'):
-    # Histogram
-    def fig_target_z(loco_meth):
-        fig, ax = plt.subplots(figsize=(5, 3))
-        ax.hist(dfs_target[f'{loco_meth}'], bins=15, label=["Target", "Z"])
-        ax.set_xlabel('Target/Z')
-        ax.set_ylabel('Frequency')
-        ml_name1 = ml_rename(ml_name)
-        simu_type1 = simu_type_rename(simu_type)
-        ax.set_title(f'{simu_type1} | {ml_name1}')
-        ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
-        ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')
-        plt.tight_layout()
-        plt.savefig(f'{figure_path}/TargetZ_Hist_{loco_meth}_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
-        plt.show()
-        plt.close()
-
-    for loco_meth in loco_meths:
-        fig_target_z(loco_meth)
-    
+def fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, lossfunc):
     # Power Comparison
     # Power
     def get_fig_power(ci = True):
@@ -156,9 +135,9 @@ def fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, los
         ax.legend(bbox_to_anchor=(1.35, 0.3),loc='lower center')
         plt.tight_layout()
         if ci:
-            plt.savefig(f'{figure_path}/PowerCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+            plt.savefig(f'PowerCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
         else:
-            plt.savefig(f'{figure_path}/Power_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+            plt.savefig(f'Power_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
         plt.show()
         plt.close()
 

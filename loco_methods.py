@@ -371,7 +371,7 @@ def LOCOSplit(X, Y, X1, Y1, fit_funct, ratio, alpha, lossfunc, selected_features
     
         resids_drop = loss_func(y_val, out_j, lossfunc)
         z[idd] = resids_drop - resids_split
-        inf_z[idd] = ztest(z[idd],alpha,bonf_correct =bonf)
+        inf_z[idd] = ztest(z[idd],alpha,MM=len(ff),bonf_correct =bonf)
 
     uhat_test=predictions_test ## TEST ERROR WITH J 
     target,err1,err2 = {},{},{}

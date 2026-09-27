@@ -37,7 +37,7 @@ def res_pred_ci(M, loco_meths, simu_type, ml_name, rep, ratios, alpha, target_in
     file_path = f'{output_path}/fig_PredCI_Error_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl'
     dfs_pred_error.to_pickle(file_path)
 
-def fig_pred_ci(M, N, loco_meths, simu_type, ml_name, indep_delta, target_inds, lossfunc, output_path = '.', figure_path = '.'):
+def fig_pred_ci(M, N, loco_meths, simu_type, ml_name, indep_delta, target_inds, lossfunc, output_path = '.'):
     dfs_ci = {loco_meth: pd.DataFrame() for loco_meth in loco_meths}
     dfs_pred_error = pd.read_pickle(f'{output_path}/fig_PredCI_Error_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl')
     dfs_adap_error = result = pd.read_pickle(f'{output_path}/fig_PredCI_AdaError_LOCO-AdaMP_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl')
@@ -52,13 +52,12 @@ def fig_pred_ci(M, N, loco_meths, simu_type, ml_name, indep_delta, target_inds, 
         dfs_ci[f'{loco_meth}'] = pd.read_pickle(f'{output_path}/fig_PredCI_CI_{loco_meth}_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl')
     for tar in target_inds:
         dfs_adap_target[tar] = pd.read_pickle(f'{output_path}/fig_PredCI_AdaTarget{tar}_LOCO-AdaMP_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl')
-    fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, lossfunc, output_path = output_path, figure_path = figure_path)
-    fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, dfs_adap_error, dfs_adap_samp_prob, dfs_adap_target, dfs_adap_ci, dfs_adap_ass, lossfunc, figure_path = figure_path)
+    fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, lossfunc, output_path = output_path)
+    fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, dfs_adap_error, dfs_adap_samp_prob, dfs_adap_target, dfs_adap_ci, dfs_adap_ass, lossfunc)
 
 ### Prediction for LOCO-AdaMP
 def pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, rep, alpha, indep_delta, n_jobs, lossfunc, simu_path = '.', output_path = '.', seed0=1):
-    m,n = get_mn(M,N)
-    Kb = get_Kb(M, N, m, n)
+    m,n,Kb,K_locomp = get_parameter(M,N)
     ml_model = get_model(ml_name)
     def get_predci_LOCOAdaMP(rep_ind):
         data =  pd.read_pickle(f'{simu_path}/sim_{simu_type}_M{M}_{rep_ind}.pkl')
@@ -123,6 +122,7 @@ def res_pred_ci_LOCOAdaMP(M, simu_type, ml_name, rep, alpha, target_inds, n_feat
         dfs_adap_target = pd.DataFrame({'iteration': list(range(1,len(result)+1)), 'target': adap_target[s], 'target_yerr': adap_target_yerr[s]})
         file_path = f'{output_path}/fig_PredCI_AdaTarget{tar}_LOCO-AdaMP_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl'
         dfs_adap_target.to_pickle(file_path)
+    
     result = pd.read_pickle(f'{output_path}/res_PredCI_LOCO-AdaMP_{simu_type}_{ml_name}_{lossfunc}_M{M}_1.pkl')
     adap_ci_center = [0]*n_features
     adap_ci_err = [0]*n_features
@@ -150,9 +150,7 @@ def res_pred_ci_LOCOAdaMP(M, simu_type, ml_name, rep, alpha, target_inds, n_feat
 
 ### Prediction for LOCO-MP
 def pred_ci_LOCOMP(M, N, simu_type, ml_name, rep, alpha, n_jobs, lossfunc, simu_path = '.', output_path = '.', seed0=1):
-    m,n = get_mn(M,N)
-    Kb = get_Kb(M, N, m, n)
-    K_locomp = sum(Kb)
+    m,n,Kb,K_locomp = get_parameter(M,N)
     ml_model = get_model(ml_name)
     def get_predci_LOCOMP(rep_ind):
         data =  pd.read_pickle(f'{simu_path}/sim_{simu_type}_M{M}_{rep_ind}.pkl')
@@ -216,7 +214,7 @@ def res_pred_ci_LOCOSplit(M, simu_type, ml_name, rep, ratio, n_features, lossfun
     return pred_err
 
 ### Comparison Figure 
-def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, lossfunc, output_path = '.', figure_path = '.'):
+def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, lossfunc, output_path = '.'):
     # Confidence Interval
     color_list = ["#d62728", '#2ca02c','#ff7f0e','#1f77b4', '#9467bd', "#8c564b"]
     fig, ax = plt.subplots(figsize=(6.8, 3))
@@ -233,7 +231,7 @@ def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, 
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/TargetCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'TargetCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -267,12 +265,12 @@ def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, 
     ax.set_xticklabels([])
     ax.legend(bbox_to_anchor=(1.4, 0.2),loc='lower center')
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/TestError_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'TestError_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
 ### Figure for LOCO-AdaMp
-def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, dfs_adap_error, dfs_adap_samp_prob, dfs_adap_target, dfs_adap_ci, dfs_adap_ass, lossfunc, figure_path = '.'):
+def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, dfs_adap_error, dfs_adap_samp_prob, dfs_adap_target, dfs_adap_ci, dfs_adap_ass, lossfunc):
     # Prediction Error
     fig, ax = plt.subplots(figsize=(3.7, 3))
     error = dfs_adap_error
@@ -281,12 +279,12 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Test Error')
     ax.set_ylim([-0.05, 1.05])
-    ml_name1 = ml_rename(ml_name)
+    ml_name1 = ml_rename1(ml_name)
     simu_type1 = simu_type_rename(simu_type)
     ax.set_title(f'{simu_type1} | {ml_name1}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaMP_TestError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_TestError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -298,49 +296,30 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Traning Error')
     ax.set_ylim([-0.05, 1.05])
-    ml_name1 = ml_rename(ml_name)
+    ml_name1 = ml_rename1(ml_name)
     simu_type1 = simu_type_rename(simu_type)
     ax.set_title(f'{simu_type1} | {ml_name1}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaMP_TrainError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
-    plt.show()
-    plt.close()
-
-    # Sampling Probability
-    fig, ax = plt.subplots(figsize=(7, 3))
-    ax.axhline(y=indep_delta, color='red', linestyle='--', linewidth=1, label='Delta Line (0.9)')
-    for b in range(len(error['iteration'])):            
-        sampling_prob = dfs_adap_samp_prob[b]
-        ax.plot(sampling_prob['feature'],sampling_prob['indep_samp_prob'],linestyle='-', marker='o', label = f'Iteration {b+1}')
-    ax.set_xticks(sampling_prob['feature'])
-    ax.set_xlabel('Feature')
-    ax.set_ylabel('Sampling Probability')
-    ml_name1 = ml_rename(ml_name)
-    simu_type1 = simu_type_rename(simu_type)
-    ax.set_title(f'{simu_type1} | {ml_name1}')
-    ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
-    ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
-    plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaMP_SampProb_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_TrainError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
     # Assumption Check
     fig, ax = plt.subplots(figsize=(5, 3))
     ax.hist(dfs_adap_ass['prob_min_max'], rwidth=0.8)
-    m,n = get_mn(M,N)
+    m,n,Kb,K_locomp = get_parameter(M,N)
     ax.axvline(x=m/M, color='red', linestyle='--', linewidth=1, label = "m/M")
     ax.set_xlabel('Probability')
     ax.set_xlim([-0.01, 0.31])
     ax.set_ylabel('Frequency')
-    ml_name1 = ml_rename(ml_name)
+    ml_name1 = ml_rename1(ml_name)
     simu_type1 = simu_type_rename(simu_type)
     ax.set_title(f'{simu_type1} | {ml_name1}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.2, 0.5),loc='lower center') 
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaMP_Ass_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_Ass_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -353,13 +332,13 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Target')
     #ax.set_yscale('log')
-    ml_name1 = ml_rename(ml_name)
+    ml_name1 = ml_rename1(ml_name)
     simu_type1 = simu_type_rename(simu_type)
     ax.set_title(f'{simu_type1} | {ml_name1}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaMP_Target_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_Target_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -372,32 +351,12 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_ylabel('Target')
     ax.set_yscale('symlog', linthresh=0.001)
     ax.set_ylim([-0.005, 0.5])
-    ml_name1 = ml_rename(ml_name)
+    ml_name1 = ml_rename1(ml_name)
     simu_type1 = simu_type_rename(simu_type)
     ax.set_title(f'{simu_type1} | {ml_name1}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
     plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaMP_LogTarget_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
-    plt.show()
-    plt.close()
-
-    # Confidence Interval        
-    fig, ax = plt.subplots(2, 3, figsize=(11, 6))
-    ax = ax.flatten()
-    for b in range(len(error['iteration'])):
-        ci = dfs_adap_ci[b]
-        ax[b].errorbar(x=ci['feature'], y=ci['ci_center'], yerr=ci['ci_err'], linestyle="None", capsize=3, marker="_")
-        ax[b].axhline(y=0, color='red', linestyle='--', linewidth=1, label='Zero Line')
-        ax[b].set_xticks(ci['feature'])
-        ax[b].set_xlabel('Feature')
-        ax[b].set_ylabel('90% Confidence Interval')
-        ml_name1 = ml_rename(ml_name)
-        simu_type1 = simu_type_rename(simu_type)
-        ax[b].set_title(f'{simu_type1} | {ml_name1} | Iter {b+1}')
-        ax[b].grid(True, zorder=0, alpha=0.5, linestyle='--')           
-    fig.delaxes(ax[5])
-    plt.tight_layout()
-    plt.savefig(f'{figure_path}/AdaCI/AdaMP_TargetCI_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_LogTarget_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()

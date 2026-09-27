@@ -1,36 +1,12 @@
 import numpy as np
 from ml_models import *
 
-def get_mn(M,N):
-    n = int(N**0.8)
-    #m = int(min(max(0.1*M, 15),0.5*n))
-    m = int(4*np.log(M))
-    return m,n
-
-def get_Kb(M,N,m,n,k = [100, 100, 100, 100, 1000]):
-    c = M/m * N/n
-    k1 = k[0]
-    k2 = k[1]
-    k3 = k[2]
-    k4 = k[3]
-    k5 = k[4]
-    if M == 50:
-        k1 = k2 = k3 = k4 = 100
-        k5 = 1000
-    if M == 500:
-        k1 = k2 = k3 = k4 = 50
-        k5 = 250
-    #Kb = [int(k1* c), int(k2* c), int(k3* c), int(k4* c), int(k5* c)]
-    Kb = [2000, 2000, 2000, 2000, 10000]
-    return Kb
-
 def get_parameter(M, N):
-    m,n = get_mn(M,N)
-    print(f"M = {M}, N = {N}, m = {m}, n = {n}")
-
-    Kb = get_Kb(M,N,m,n)
+    n = int(N**0.8)
+    m = int(4*np.log(M))
+    Kb = [2000, 2000, 2000, 2000, 10000]
     K_locomp = sum(Kb)
-    print(f"Kb = {Kb}, Kb_sum = {K_locomp}")
+    return m,n,Kb,K_locomp
 
 def get_betas(beta1, beta2):
     betas = []
@@ -88,6 +64,12 @@ def ml_rename(ml_name):
         ml_name = "DecisionTree/RF"
     return ml_name
 
+def ml_rename1(ml_name):
+    if ml_name == "RandomForest":
+            ml_name = "DecisionTree"
+    return ml_name
+
+
 def simu_type_rename(simu_type):
     if simu_type == "Independent":
         simu_type = "Linear"
@@ -124,10 +106,3 @@ def get_seed(simu_type, ml_name=None, lossfunc=None):
     if simu_type == "Nonlinear":
         s = 9
     return s*123+m*37+l*99
-
-def get_seed0(seed0_in):
-    if seed0_in is None:
-        seed0 = np.random.randint(1,100000)
-    else:
-        seed0 = seed0_in
-    return seed0

@@ -16,9 +16,9 @@ def inf_coverage(M, Ns, simu_type, ml_name, rep, alpha, indep_delta, n_jobs, los
 def res_cover(M, Ns, simu_type, ml_name, rep, alpha, signal, noise, lossfunc, output_path = '.'):
     res_cover_LOCOAdaMP(M, Ns, simu_type, ml_name, rep, alpha, signal, noise, lossfunc, output_path = output_path)
 
-def fig_cover(M, simu_type, ml_name, lossfunc, output_path = '.', figure_path = '.'):
+def fig_cover(M, simu_type, ml_name, lossfunc, output_path = '.'):
     dfs_coverage = pd.read_pickle(f'{output_path}/fig_Coverage_LOCO-AdaMP_{simu_type}_{ml_name}_{lossfunc}_M{M}.pkl')
-    fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc, figure_path = figure_path)
+    fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc)
 
 
 ### Coverage for LOCO-AdaMP
@@ -26,8 +26,7 @@ def cover_LOCOAdaMP(M, Ns, simu_type, ml_name, rep, alpha, indep_delta, n_jobs, 
     ml_model = get_model(ml_name)
 
     def coverage_LOCOAdaMP(N, rep_ind):
-        m,n = get_mn(M,N)
-        Kb = get_Kb(M,N,m,n)
+        m,n,Kb,K_locomp = get_parameter(M,N)
         data =  pd.read_pickle(f'{simu_path}/sim_{simu_type}_M{M}_N{N}_{rep_ind}.pkl')
         X,Y,X1,Y1 = data[0], data[1], data[2], data[3]              
         indep_samp_prob = np.array([m/M] * M)
@@ -100,7 +99,7 @@ def res_cover_LOCOAdaMP(M, Ns, simu_type, ml_name, rep, alpha, signal, noise, lo
 
 
 ### Figure for Coverage
-def fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc, figure_path = '.'):
+def fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc):
     # Coverage
     def fig_coverage(coverage_s, coverage_n, err_s, err_n, Coverage):
         fig, ax = plt.subplots(figsize=(5.5, 3))
@@ -113,41 +112,14 @@ def fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc, figure_pa
         ax.set_xticks(coverage['N'])
         ax.set_ylim([-0.03, 1.03])
         ax.set_ylabel('Coverage')
-        ml_name1 = ml_rename(ml_name)
+        ml_name1 = ml_rename1(ml_name)
         simu_type1 = simu_type_rename(simu_type)
         ax.set_title(f'{simu_type1} | {ml_name1}')
         ax.legend(bbox_to_anchor=(1.42, 0.5),loc='lower center')  
         plt.tight_layout()
-        plt.savefig(f'{figure_path}/{Coverage}_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+        plt.savefig(f'{Coverage}_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
         plt.show()
         plt.close()
 
     fig_coverage('coverage_s', 'coverage_n', 'err_s', 'err_n','Coverage')
     fig_coverage('coverage_adj_s', 'coverage_adj_n', 'err_adj_s', 'err_adj_n','Coverage_Adj')
-
-    # Interval Width, Target, Variance
-    def fig_cover_item(item_name, feature_name, ylabel_name, save_name):
-        fig, ax = plt.subplots(figsize=(5.5, 3))
-        coverage = dfs_coverage
-        ax.plot(coverage['N'],coverage[f'{item_name}'],linestyle='-', marker='o', label = f'{feature_name}')
-        ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
-        ax.set_xlabel('N')
-        ax.set_xticks(coverage['N'])
-        ax.set_ylabel(f'{ylabel_name}')
-        ml_name1 = ml_rename(ml_name)
-        simu_type1 = simu_type_rename(simu_type)
-        ax.set_title(f'{simu_type1} | {ml_name1}')
-        ax.legend(bbox_to_anchor=(1.42, 0.5),loc='lower center')  
-        plt.tight_layout()
-        plt.savefig(f'{figure_path}/Coverage_{save_name}_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
-        plt.show()
-        plt.close()
-
-    fig_cover_item('width_s', 'Signal', 'Interval Width', 'Width_Signal')
-    fig_cover_item('width_adj_s', 'Signal', 'Interval Width', 'Width_Signal_Adj')
-    fig_cover_item('width_n', 'Noise', 'Interval Width', 'Width_Noise')
-    fig_cover_item('width_adj_n', 'Noise', 'Interval Width', 'Width_Noise_Adj')
-    fig_cover_item('target_s', 'Signal', 'Target', 'Target_Signal')
-    fig_cover_item('target_n', 'Noise', 'Target', 'Target_Noise')
-    fig_cover_item('var_s', 'Signal', 'Variance', 'Variance_Signal')
-    fig_cover_item('var_n', 'Noise', 'Variance', 'Variance_Noise')
