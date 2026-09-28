@@ -135,9 +135,9 @@ def fig_power_LOCO(M, simu_type, ml_name, loco_meths, dfs_power, dfs_target, los
         ax.legend(bbox_to_anchor=(1.35, 0.3),loc='lower center')
         plt.tight_layout()
         if ci:
-            plt.savefig(f'PowerCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+            plt.savefig(f'PowerCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
         else:
-            plt.savefig(f'Power_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+            plt.savefig(f'Power_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
         plt.show()
         plt.close()
 

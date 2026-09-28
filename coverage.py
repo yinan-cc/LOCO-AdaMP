@@ -117,7 +117,7 @@ def fig_cover_LOCOAdaMP(M, simu_type, ml_name, dfs_coverage, lossfunc):
         ax.set_title(f'{simu_type1} | {ml_name1}')
         ax.legend(bbox_to_anchor=(1.42, 0.5),loc='lower center')  
         plt.tight_layout()
-        plt.savefig(f'{Coverage}_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+        plt.savefig(f'{Coverage}_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
         plt.show()
         plt.close()
 

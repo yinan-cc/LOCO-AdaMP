@@ -621,7 +621,7 @@ def loco_pred_error(ml_name, output_path, reps = [0]):
     #plt.xticks(rotation=15)
     plt.ylabel("Test Error")
     plt.grid(True, zorder=0, alpha=0.5, linestyle='--')
-    plt.savefig(f'data_PredError_{ml_name}_mean{len(reps)}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'data_PredError_{ml_name}_mean{len(reps)}.pdf', bbox_inches="tight")
     #plt.show()
     plt.close()
 
@@ -759,7 +759,7 @@ def tmse(ml_name, output_path, reps = [0]):
     plt.ylabel("Test Error")
     plt.grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.savefig(f'data_TMSE_{ml_name}_mean{len(reps)}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'data_TMSE_{ml_name}_mean{len(reps)}.pdf', bbox_inches="tight")
     #plt.show()
     plt.close()
 
@@ -806,7 +806,7 @@ def num_sig(ml_name, col, output_path, reps = [0]):
         axes[i].grid(True, zorder=0, alpha=0.5, linestyle='--')
     fig.delaxes(axes[8])
     plt.tight_layout()
-    plt.savefig(f'data_Hist0_{ml_name}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'data_Hist0_{ml_name}.pdf', bbox_inches="tight")
     #plt.show()
     plt.close()
 
@@ -833,7 +833,7 @@ def num_sig(ml_name, col, output_path, reps = [0]):
         axes[i].set_ylim(0, max_count+0.25)
         axes[i].grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.tight_layout()
-    plt.savefig(f'data_Hist_{ml_name}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'data_Hist_{ml_name}.pdf', bbox_inches="tight")
     #plt.show()
     plt.close()
 

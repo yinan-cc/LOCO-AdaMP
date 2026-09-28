@@ -231,7 +231,7 @@ def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, 
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')
     plt.tight_layout()
-    plt.savefig(f'TargetCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'TargetCI_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -265,7 +265,7 @@ def fig_pred_ci_LOCO(M, simu_type, ml_name, loco_meths, dfs_pred_error, dfs_ci, 
     ax.set_xticklabels([])
     ax.legend(bbox_to_anchor=(1.4, 0.2),loc='lower center')
     plt.tight_layout()
-    plt.savefig(f'TestError_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'TestError_Comparison_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -284,7 +284,7 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_title(f'{simu_type1} | {ml_name1}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.tight_layout()
-    plt.savefig(f'AdaMP_TestError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_TestError_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -301,7 +301,7 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.set_title(f'{simu_type1} | {ml_name1}')
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     plt.tight_layout()
-    plt.savefig(f'AdaMP_TrainError_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_TrainError_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -319,7 +319,7 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.2, 0.5),loc='lower center') 
     plt.tight_layout()
-    plt.savefig(f'AdaMP_Ass_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_Ass_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -338,7 +338,7 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
     plt.tight_layout()
-    plt.savefig(f'AdaMP_Target_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_Target_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -357,6 +357,6 @@ def fig_pred_ci_LOCOAdaMP(M, N, simu_type, ml_name, indep_delta, target_inds, df
     ax.grid(True, zorder=0, alpha=0.5, linestyle='--')
     ax.legend(bbox_to_anchor=(1.4, 0.5),loc='lower center')  
     plt.tight_layout()
-    plt.savefig(f'AdaMP_LogTarget_{simu_type}_{ml_name}_{lossfunc}_M{M}.png', dpi=300, bbox_inches="tight")
+    plt.savefig(f'AdaMP_LogTarget_{simu_type}_{ml_name}_{lossfunc}_M{M}.pdf', bbox_inches="tight")
     plt.show()
     plt.close()
