@@ -1,7 +1,7 @@
 # LOCO-AdaMP
 
 This repository contains the code for [LOCO-AdaMP: Built-in LOCO Inference for Adaptive
-Minipatch Ensembles with Enhanced Prediction](link) by Yinan Cheng and Lili Zheng
+Minipatch Ensembles with Enhanced Prediction](https://arxiv.org/abs/2609.36396) by Yinan Cheng and Lili Zheng
 
 ## Simulation Study
 
